@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+
+"""AnimeBam.net Service Code"""
+
+RE_NORM = Regex(r'(https?://(?:www\.)?\w+\.\w+)/embed/(\w+)')
+RE_SOURCES = Regex(r'(?i)sources *?(?:\:|\=) *?(\[.*?\{[^\]]+\}.*?\])')
+FALLBACK = 'http://i.imgur.com/75YO83o.jpg'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    r = RE_NORM.search(url)
+    return r.group(1) + '/embed/' + r.group(2) if r else url
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+    html = HTML.ElementFromString(get_page(url))
+
+    data = dict()
+    for item in ['title', 'description', 'image']:
+        value = html.xpath('//meta[@property="og:{0}"]/@content'.format(item))
+        if value:
+            data[item] = value[0]
+
+    if 'image' in data.keys() and data['image']:
+        thumb = data['image']
+        thumb = thumb if thumb.startswith('http') else 'http:' + thumb
+    else:
+        thumb = FALLBACK
+
+    if 'title' in data.keys() and data['title']:
+        title = data['title'].strip()
+    else:
+        title = 'ABVideo | {0}'.format(RE_NORM.search(url).group(2))
+
+    return VideoClipObject(
+        title=title,
+        thumb=Resource.ContentsOfURLWithFallback([thumb, FALLBACK]),
+        summary=data['description'].strip() if 'description' in data.keys() else None,
+        source_title='ABVideo'
+        )
+
+####################################################################################################
+@deferred
+def MediaObjectsForURL(url):
+
+    rs = RE_SOURCES.search(get_page(url))
+    if not rs:
+        raise Ex.MediaNotAvailable
+
+    s = rs.group(1).replace("'", '"')
+    if '"file"' not in s:
+        s = s.replace('file', '"file"')
+    if '"label"' not in s:
+        s = s.replace('label', '"label"')
+
+    src_list = JSON.ObjectFromString(s)
+    sources = list()
+    for src in src_list:
+        src['label'] = int(src['label'][:-1])
+        if src['file'].startswith('/'):
+            src['file'] = RE_NORM.search(url).group(1) + src['file']
+        sources.append(src)
+
+    Log(u"* ABVideo Video Sources: '{0}'".format(sources))
+
+    return [
+        MediaObject(
+            video_resolution=str(item['label']),
+            container=Container.MP4,
+            video_codec=VideoCodec.H264,
+            audio_codec=AudioCodec.AAC,
+            audio_channels=2,
+            optimized_for_streaming=True,
+            parts=[
+                PartObject(key=Callback(RedirectVideo, url=item['file'], eurl=url))
+                ]
+            ) for item in reversed(Util.ListSortedByKey(sources, 'label'))
+        ]
+
+####################################################################################################
+def RedirectVideo(url, eurl, count=0):
+    if (count >= 3):
+        Log.Error("* RedirectVideo Error: Tried {} times to find the final video stream but failed.".format(count))
+        raise Ex.MediaNotAvailable
+    count += 1
+
+    try:
+        HTTP.Request(url, headers={'Referer': eurl}, cacheTime=10, method='HEAD', follow_redirects=False, immediate=True)
+        Log(u"* RedirectVideo URL = {0}".format(url))
+        return Redirect(url)
+    except Ex.RedirectError, e:
+        if 'Location' in e.headers:
+            return RedirectVideo(e.headers['Location'], eurl, count)
+        elif 'location' in e.headers:
+            return RedirectVideo(e.headers['location'], eurl, count)
+    except:
+        Log.Exception(u"* Error: Cannot handle '{0}' >>>".format(url))
+
+    raise Ex.MediaNotAvailable
+
+####################################################################################################
+def get_page(url):
+    try:
+        page = HTTP.Request(url, cacheTime=10).content
+    except:
+        Log.Exception(u"* Error: Cannot open '{0}' >>>".format(url))
+        raise Ex.MediaNotAvailable
+    return page
