@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>URL</key>
+    <dict>
+      <key>WholeCloud</key>
+      <dict>
+        <key>URLPatterns</key>
+        <array>
+          <string>^https?\:\/\/(?:www\.|embed\.)?auroravid\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?bitvid\.\w+\/.+</string>
+          <!--<string>^https?\:\/\/(?:www\.|embed\.)?cloudtime\.\w+\/.+</string>-->
+          <string>^https?\:\/\/(?:www\.|embed\.)?cloudy\.\w+\/.+</string>
+          <!--<string>^https?\:\/\/(?:www\.|embed\.)?divxstage\.\w+\/.+</string>-->
+          <string>^https?\:\/\/(?:www\.|embed\.)?movshare\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?novamov\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?nowvideo\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?videoraj\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?videoweed\.\w+\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?vid(?:gg\.\w+|\.gg)\/.+</string>
+          <string>^https?\:\/\/(?:www\.|embed\.)?wholecloud\.\w+\/.+</string>
+        </array>
+      </dict>
+    </dict>
+  </dict>
+</plist>
